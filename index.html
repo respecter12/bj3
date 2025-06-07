@@ -289,12 +289,20 @@
   <script>
     let currentGame = null;
     let isDealing = false;
+    let loadingTimeout = null;
+    let isRequestingBalance = false;
 
     function showLoading() {
       const loading = document.createElement('div');
       loading.className = 'loading';
       loading.innerHTML = '<div class="loading-spinner"></div>';
       document.body.appendChild(loading);
+
+      loadingTimeout = setTimeout(() => {
+        hideLoading();
+        console.warn('Loading spinner hidden by timeout. No web_app_data received.');
+        setMsg('Не удалось получить ответ от бота. Попробуйте снова.');
+      }, 10000);
     }
 
     function hideLoading() {
@@ -302,11 +310,21 @@
       if (loading) {
         loading.remove();
       }
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+        loadingTimeout = null;
+      }
     }
 
     function sendToBot(type, data={}) {
       showLoading();
-      Telegram.WebApp.sendData(JSON.stringify({type, ...data}));
+      if (Telegram.WebApp.ready) {
+        Telegram.WebApp.sendData(JSON.stringify({type, ...data}));
+      } else {
+        console.error('Telegram WebApp is not ready. Data not sent.');
+        hideLoading();
+        setMsg('Ошибка: приложение не готово. Попробуйте обновить страницу.');
+      }
     }
 
     function showTopup() {
@@ -442,6 +460,7 @@
         console.log('Received web_app_data:', data);
         hideLoading();
         isDealing = false;
+        isRequestingBalance = false;
         
         if (data.type === 'balance_update') {
           updateBalance(data.balance);
@@ -456,14 +475,24 @@
         console.error('Error parsing web app data:', e);
         hideLoading();
         isDealing = false;
+        isRequestingBalance = false;
       }
     });
 
     function requestBalance() {
-      sendToBot('balance');
+      if (!isRequestingBalance) {
+        isRequestingBalance = true;
+        sendToBot('balance');
+      } else {
+        console.log('Balance request already in progress, skipping.');
+      }
     }
     
-    requestBalance();
+    Telegram.WebApp.onEvent('ready', function() {
+      console.log('Telegram WebApp is ready.');
+      requestBalance();
+    });
+    
     setInterval(requestBalance, 5000);
   </script>
 </body>
