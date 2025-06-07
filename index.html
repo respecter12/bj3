@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Blackjack Mini App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @keyframes dealCard {
+      0% { transform: translateY(-100px) rotate(-10deg); opacity: 0; }
+      100% { transform: translateY(0) rotate(0); opacity: 1; }
+    }
+    
+    @keyframes flipCard {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(180deg); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    body { 
+      font-family: 'Segoe UI', Arial, sans-serif; 
+      background: linear-gradient(135deg, #1a2d1a 0%, #0f1a0f 100%);
+      color: #fff; 
+      margin: 0; 
+      padding: 0; 
+      min-height: 100vh;
+    }
+    
+    .container { 
+      max-width: 340px; 
+      margin: 20px auto 0 auto; 
+      background: rgba(34, 46, 34, 0.95);
+      border-radius: 16px; 
+      padding: 20px 14px 14px 14px; 
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      position: relative;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    button { 
+      background: linear-gradient(135deg, #27ae60 0%, #219150 100%);
+      color: #fff; 
+      border: none; 
+      border-radius: 8px; 
+      padding: 14px 0; 
+      margin: 8px 0; 
+      cursor: pointer; 
+      width: 100%; 
+      font-size: 1.1em; 
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+    }
+    
+    button:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(1px);
+    }
+    
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    input { 
+      width: 100%; 
+      padding: 14px; 
+      margin: 8px 0; 
+      border-radius: 8px; 
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      background: rgba(26, 45, 26, 0.8);
+      color: #fff; 
+      font-size: 1.1em; 
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #27ae60;
+      box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+    }
+    
+    .section { 
+      margin-bottom: 24px; 
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .title { 
+      font-size: 1.4em; 
+      margin-bottom: 16px; 
+      text-align: center; 
+      letter-spacing: 1px; 
+      color: #ffe066;
+      text-transform: uppercase;
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    #balance-box { 
+      position: fixed; 
+      top: 14px; 
+      right: 18px; 
+      background: rgba(34, 46, 34, 0.95);
+      color: #ffe066; 
+      border-radius: 12px; 
+      padding: 10px 20px; 
+      font-weight: bold; 
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      z-index: 100; 
+      font-size: 1.1em; 
+      border: 2px solid #27ae60;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(10px);
+      animation: slideIn 0.5s ease;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .cards { 
+      display: flex; 
+      gap: 10px; 
+      justify-content: center; 
+      margin: 16px 0; 
+      flex-wrap: wrap;
+      min-height: 120px;
+    }
+    
+    .card { 
+      background: #fff; 
+      color: #222; 
+      border-radius: 8px; 
+      padding: 10px 12px; 
+      font-size: 1.2em; 
+      min-width: 36px; 
+      text-align: center; 
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      animation: dealCard 0.5s ease;
+      transition: transform 0.3s ease;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .card.dealt {
+      animation: dealCard 0.5s ease;
+    }
+    
+    .card.flipped {
+      animation: flipCard 0.6s ease;
+    }
+    
+    .msg { 
+      text-align: center; 
+      margin: 16px 0 0 0; 
+      color: #ffe066; 
+      font-size: 1.1em; 
+      min-height: 24px; 
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(255, 224, 102, 0.1);
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .game-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    
+    .game-actions button {
+      margin: 0;
+    }
+    
+    .double-btn {
+      grid-column: 1 / -1;
+    }
+    
+    .score {
+      text-align: center;
+      font-size: 1.2em;
+      margin: 8px 0;
+      color: #ffe066;
+      font-weight: bold;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .dealer-area, .player-area {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+    
+    .dealer-title, .player-title {
+      color: #ffe066;
+      font-size: 1.1em;
+      margin-bottom: 8px;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .win-animation {
+      animation: pulse 1s ease infinite;
+    }
+    
+    .lose-animation {
+      animation: shake 0.5s ease;
+    }
+    
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #27ae60;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="balance-box">💰 <span id="balance-value">—</span> ⭐</div>
+  <div class="container">
+    <div class="section">
+      <div class="title">Blackjack</div>
+      <button onclick="showTopup()">💎 Пополнить</button>
+      <button onclick="showWithdraw()">💸 Вывести</button>
+      <button onclick="showGame()">🎮 Играть</button>
+    </div>
+    <div id="dynamic"></div>
+    <div class="msg" id="msg"></div>
+  </div>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    let currentGame = null;
+    let isDealing = false;
+
+    function showLoading() {
+      const loading = document.createElement('div');
+      loading.className = 'loading';
+      loading.innerHTML = '<div class="loading-spinner"></div>';
+      document.body.appendChild(loading);
+    }
+
+    function hideLoading() {
+      const loading = document.querySelector('.loading');
+      if (loading) {
+        loading.remove();
+      }
+    }
+
+    function sendToBot(type, data={}) {
+      showLoading();
+      Telegram.WebApp.sendData(JSON.stringify({type, ...data}));
+    }
+
+    function showTopup() {
+      document.getElementById('dynamic').innerHTML = `
+        <div class='section'>
+          <div class='title'>Пополнение</div>
+          <input id='topup_amount' type='number' min='10' placeholder='Сумма (от 10)'>
+          <button onclick='topup()'>💎 Отправить запрос</button>
+        </div>`;
+      setMsg('');
+    }
+
+    function topup() {
+      let amount = document.getElementById('topup_amount').value;
+      if (amount && +amount >= 10) {
+        sendToBot('topup', {amount});
+      }
+    }
+
+    function showWithdraw() {
+      document.getElementById('dynamic').innerHTML = `
+        <div class='section'>
+          <div class='title'>Вывод</div>
+          <input id='withdraw_amount' type='number' min='100' placeholder='Сумма (от 100)'>
+          <button onclick='withdraw()'>💸 Запросить вывод</button>
+        </div>`;
+      setMsg('');
+    }
+
+    function withdraw() {
+      let amount = document.getElementById('withdraw_amount').value;
+      if (amount && +amount >= 100) {
+        sendToBot('withdraw', {amount});
+      }
+    }
+
+    function showGame() {
+      document.getElementById('dynamic').innerHTML = `
+        <div class='section'>
+          <div class='title'>Ставка</div>
+          <input id='bet_amount' type='number' min='10' placeholder='Ставка (мин. 10)'>
+          <button onclick='startGame()'>🎮 Начать игру</button>
+        </div>`;
+      setMsg('');
+    }
+
+    function startGame() {
+      let bet = document.getElementById('bet_amount').value;
+      if (bet && +bet >= 10) {
+        sendToBot('play', {bet});
+      }
+    }
+
+    function setMsg(text) {
+      document.getElementById('msg').textContent = text;
+    }
+
+    async function dealCards(cards, container, delay = 300) {
+      for (let i = 0; i < cards.length; i++) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.textContent = cards[i];
+        card.style.animationDelay = `${i * delay}ms`;
+        container.appendChild(card);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    function showGameState(data) {
+      currentGame = data;
+      let html = `
+        <div class='section'>
+          <div class='dealer-area'>
+            <div class='dealer-title'>Карты дилера</div>
+            <div class='cards' id='dealer-cards'></div>
+            <div class='score'>Сумма: <b>${data.dealer_score}</b></div>
+          </div>
+          
+          <div class='player-area'>
+            <div class='player-title'>Ваши карты</div>
+            <div class='cards' id='player-cards'></div>
+            <div class='score'>Сумма: <b>${data.player_score}</b></div>
+          </div>
+          
+          <div class='game-actions'>
+            <button onclick='hit()'>🎴 Взять карту</button>
+            <button onclick='stand()'>✋ Стоп</button>
+            <button class='double-btn' onclick='double()'>💎 Удвоить ставку</button>
+          </div>
+        </div>`;
+      
+      document.getElementById('dynamic').innerHTML = html;
+      
+      // Анимация раздачи карт
+      setTimeout(() => {
+        dealCards(data.dealer_cards, document.getElementById('dealer-cards'));
+        setTimeout(() => {
+          dealCards(data.player_cards, document.getElementById('player-cards'));
+        }, 500);
+      }, 100);
+      
+      setMsg(data.message || '');
+    }
+
+    function hit() {
+      if (currentGame && !isDealing) {
+        isDealing = true;
+        sendToBot('hit');
+      }
+    }
+
+    function stand() {
+      if (currentGame && !isDealing) {
+        isDealing = true;
+        sendToBot('stand');
+      }
+    }
+
+    function double() {
+      if (currentGame && !isDealing) {
+        isDealing = true;
+        sendToBot('double');
+      }
+    }
+
+    function updateBalance(value) {
+      document.getElementById('balance-value').textContent = value;
+    }
+
+    Telegram.WebApp.onEvent('web_app_data', function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Received web_app_data:', data);
+        hideLoading();
+        isDealing = false;
+        
+        if (data.type === 'balance_update') {
+          updateBalance(data.balance);
+        } else if (data.type === 'topup_info' || data.type === 'withdraw_info') {
+          setMsg(data.message);
+        } else if (data.type === 'withdraw_error' || data.type === 'play_error') {
+          setMsg(data.message);
+        } else if (data.type === 'game_state') {
+          showGameState(data);
+        }
+      } catch(e) {
+        console.error('Error parsing web app data:', e);
+        hideLoading();
+        isDealing = false;
+      }
+    });
+
+    function requestBalance() {
+      sendToBot('balance');
+    }
+    
+    requestBalance();
+    setInterval(requestBalance, 5000);
+  </script>
+</body>
+</html> 
